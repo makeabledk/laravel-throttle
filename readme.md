@@ -2,6 +2,7 @@
 # Laravel Essentials
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/makeabledk/laravel-throttle.svg?style=flat-square)](https://packagist.org/packages/makeabledk/laravel-throttle)
+[![StyleCI](https://styleci.io/repos/191527727/shield?branch=master)](https://styleci.io/repos/191527727)
 
 
 **IMPORTANT NOTICE** 
