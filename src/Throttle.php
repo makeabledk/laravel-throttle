@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Redis;
  */
 class Throttle
 {
-    const TooManyRequests = 429;
-
     /**
      * The default amount of tries.
      *
@@ -39,6 +37,11 @@ class Throttle
      * @var callable|null
      */
     protected $catchUsing;
+
+    /**
+     * @var callable|null
+     */
+    protected $failUsing;
 
     /**
      * Throttle constructor.
@@ -209,6 +212,17 @@ class Throttle
     /**
      * @param $callback
      * @return Throttle
+     */
+    public function failed($callback)
+    {
+        $this->failUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param $callback
+     * @return Throttle
      * @throws \Illuminate\Contracts\Redis\LimiterTimeoutException
      */
     public function run($callback)
@@ -220,11 +234,26 @@ class Throttle
                 } catch (\Exception $exception) {
                     $this->handleError($exception);
                 }
-            },
-            function () {
-                $this->retry();
             }
         );
+
+        return $this;
+    }
+
+    /**
+     * @param \Exception|null $exception
+     * @return $this
+     */
+    public function fail(\Exception $exception = null)
+    {
+        try {
+            call_user_func($this->failUsing ?? function ($e) {
+                    throw $e;
+                }, $exception, $this);
+        }
+        catch (\Exception $exception) {
+            $this->job->fail($exception);
+        }
 
         return $this;
     }
@@ -233,7 +262,7 @@ class Throttle
      * @param $seconds
      * @return Throttle
      */
-    public function retry($seconds)
+    public function retry($seconds = null)
     {
         $this->job->release(
             $seconds ?? $this->retryAfter ?? optional($this->throttle)->decay ?? 0
@@ -339,10 +368,6 @@ class Throttle
      */
     protected function handleError(\Exception $exception)
     {
-        if ($exception->getCode() === static::TooManyRequests) {
-            return $this->retry();
-        }
-
         try {
             if ($this->catchUsing) {
                 call_user_func($this->catchUsing, $exception, $this);
@@ -357,7 +382,7 @@ class Throttle
             return $this->retry();
         }
 
-        throw $exception;
+        return $this->fail($exception);
     }
 
     /**
