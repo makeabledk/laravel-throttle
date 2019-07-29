@@ -4,6 +4,7 @@ namespace Makeable\Throttle;
 
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Redis\Limiters\DurationLimiterBuilder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -75,7 +76,7 @@ class Throttle
      */
     public function __get($name)
     {
-        return array_get($this->job->throttleOptions, $name);
+        return Arr::get($this->job->throttleOptions, $name);
     }
 
     /**
@@ -247,9 +248,13 @@ class Throttle
     public function fail(\Exception $exception = null)
     {
         try {
-            call_user_func($this->failUsing ?? function ($e) {
+            call_user_func(
+                $this->failUsing ?? function ($e) {
                     throw $e;
-                }, $exception, $this);
+                },
+                $exception,
+                $this
+            );
         }
         catch (\Exception $exception) {
             $this->job->fail($exception);
@@ -327,7 +332,7 @@ class Throttle
      */
     protected function saveThrottleConfig()
     {
-        $config = array_except(get_object_vars($this->throttle), ['connection']);
+        $config = Arr::except(get_object_vars($this->throttle), ['connection']);
 
         foreach ($config as $param => $value) {
             $this->__set('throttleConfig.'.$param, $value);

@@ -10,7 +10,7 @@ trait Throttling
     public $throttleOptions;
 
     /**
-     * @return Throttle
+     * @return Dispatcher
      */
     public function configure()
     {
@@ -18,10 +18,10 @@ trait Throttling
     }
 
     /**
-     * @return Throttle
+     * @return Dispatcher
      */
     public function throttle()
     {
-        return Throttle::job($this, config('queue.default') === 'redis');
+        return Dispatcher::job($this, config('queue.default') === 'redis');
     }
 }
