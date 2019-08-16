@@ -24,15 +24,26 @@ class Stub extends Job
     public function handle()
     {
         $this
-            ->tap()
-            ->retryAfterMinutes(1)
-            ->retryMaxTimes(1)
+            ->allow(500)
+            ->everyMinutes(5)
+            ->retryAfterMinutes(5)
             ->retryOnError(422)
+            ->retryMaxTimes(3)
             ->run(function () {
-
+                // Do something
+            })
+            ->catch(function (StripeException $exception) {
+                // Catch specific exception
             })
             ->catch(function () {
+                // Catch everything else
+            })
+            ->failed(function (Exception $exception) {
+                // Handle some special failed logic here.
+                // Job is only marked as failed if
+                // exception is re-thrown here
 
+                // throw $exception;
             });
     }
 }
